@@ -17,7 +17,7 @@
 
 #include "usetable.h"
 
-#define HASHCOUNT 16
+#define HASHCOUNT 18
 
 static uint32_t rol32(uint32_t, int);
 static void sha_simple(uint32_t*, char*, uint32_t);
@@ -60,6 +60,8 @@ void ram(void) {
     prefix[13] = 0x9e19ea94;
     prefix[14] = 0x7f20073a;
     prefix[15] = 0x5366be65;
+    prefix[16] = 0xb53f096f;
+    prefix[17] = 0x57f28a08;
     // compute my hash
     uint32_t myid = GetUUID32();
     hash(myid, myhashes);
@@ -76,19 +78,16 @@ void ram(void) {
 
 void net_scan() {
     uint8_t buf[16];
-    uint16_t hashes[5];
-        for(int i = 0; i < 5; i++) {
+    uint16_t hashes[HASHCOUNT];
+        for(int i = 0; i < HASHCOUNT; i++) {
         hashes[i] = 0xffff ^ myhashes[i];
     }
-    int c;
     int tries = 0;
     while (
         ++tries < 1024 &&
         getInputRaw() == BTN_NONE
     ) {
-        if((c = nrf_rcv_pkt_time(64,sizeof(buf),buf)) == 16 &&
-           buf[1] == 0x17
-        ) {
+        if(nrf_rcv_pkt_time(64,sizeof(buf),buf) == 16 && buf[1] == 0x17) {
             uint32_t id = uint8ptouint32(&buf[8]);
             hash(id, hashes);
             for (int i = 0; i < HASHCOUNT; i++) {
@@ -119,7 +118,7 @@ void draw() {
     lcdClear();
     for (int i = 0; i < HASHCOUNT; i++) {
         lcdPrintInt(best[i] ^ myhashes[i]);
-        if (i % 3 == 1) {
+        if (i % 3 == 2) {
             lcdNl();
         } else {
             lcdPrint(" ");
